@@ -138,12 +138,12 @@ def build_biomarker_reference_table(features_df: pd.DataFrame) -> pd.DataFrame:
         "MeshVolume": ("mm³", "Total 3D segmented tumour burden; primary driver of mass effect."),
         "SurfaceArea": ("mm²", "Outer 3D boundary area of the lesion; elevated in infiltrative growth."),
         "Sphericity": ("0 – 1 Index", "Morphological compactness (1.0 = sphere); lower values suggest irregular margins."),
-        "Energy": ("Intensity²", "Sum of squared voxel intensities inside the lesion ROI."),
-        "Entropy": ("Bits", "First-order intensity randomness reflecting necrotic/oedema heterogeneity."),
-        "MeanIntensity": ("Signal Units", "Mean FLAIR signal intensity within the segmented tumour mass."),
-        "GLCM_Contrast": ("Gradient²", "Local voxel-to-voxel brightness contrast across tumour tissue."),
-        "GLCM_Correlation": ("0 – 1 Index", "Spatial uniformity of grey-level transitions inside the lesion."),
-        "GLCM_Entropy": ("Bits", "Spatial texture disorder of internal tumour microstructure."),
+        "Energy": ("Norm Intensity²", "Sum of squared [0, 1] normalized voxel intensities inside lesion ROI."),
+        "Entropy": ("Bits (32-Bin)", "First-order intensity randomness over [0, 1] reflecting tissue heterogeneity."),
+        "MeanIntensity": ("Norm [0, 1]", "Mean foreground-normalized signal intensity within the segmented tumour mass."),
+        "GLCM_Contrast": ("32-Level²", "3D spatial voxel-to-voxel discrete transition contrast across tumour tissue."),
+        "GLCM_Correlation": ("0 – 1 Index", "3D spatial uniformity of grey-level transitions inside the lesion."),
+        "GLCM_Entropy": ("Bits (32×32)", "3D joint spatial texture disorder of internal tumour microstructure."),
         "Patient_Age": ("Years", "Independent clinical prognostic covariate for glioma survival."),
     }
     rows = []
@@ -190,7 +190,7 @@ def build_radiological_impression(patient_id: str, age: int, anatomy: dict, pred
             f"protective factors, led by <b>{neg_imp.idxmin()}</b>."
         )
     else:
-        shap_sentence = "TreeSHAP attribution shows neutral net risk impact relative to the cohort baseline."
+        shap_sentence = "TreeSHAP attribution shows neutral net risk impact relative to the BraTS 2020 cohort baseline (N=235)."
 
     subcomp_str = ""
     if anatomy.get("has_subcompartments", False):
@@ -201,7 +201,7 @@ def build_radiological_impression(patient_id: str, age: int, anatomy: dict, pred
 
     hr_val = pred.get("hazard_ratio", 1.0)
     surv_cal = (
-        f"Unified Cox Proportional Hazards modeling (Relative Hazard: <b>{hr_val:.2f}×</b> cohort baseline) projects median overall survival at "
+        f"Unified Cox Proportional Hazards modeling (Relative Hazard: <b>{hr_val:.2f}×</b> BraTS 2020 cohort baseline) projects median overall survival at "
         f"<b>~{pred['days']} days ({pred['months']} months)</b> with a 6-month survival probability of <b>{pred['prob_6m']}%</b>, "
         f"12-month probability of <b>{pred['prob_12m']}%</b> (12m mortality risk: <b>{pred['risk_score']}%</b>), and 24-month probability of <b>{pred['prob_24m']}%</b>."
         if pred.get("prob_6m") is not None

@@ -336,11 +336,18 @@ def load_dicom_series_from_zip(zip_bytes, filename="dicom_series.zip"):
 
 
 def extract_radiomics_features(mri_data, voxel_dims, mask_data, age=55.0):
-    """Computes IBSI-aligned 3D Radiomic biomarkers.
+    """Computes 3D Radiomic biomarkers strictly aligned with the real BraTS 2020 XGBoost model.
 
-    Features: 1.0 mm³ isotropic resampling, fixed bin-width intensity
-    discretization, exact triangular Marching Cubes surface area, and true GLCM
-    texture matrices.
+    Preprocessing:
+      1. Foreground normalisation: mri_data[mri_data > 0] normalised to [0, 1] via 99th percentile.
+      2. First-order metrics computed on vals = vol_norm[mask_bool]:
+         - MeanIntensity = np.mean(vals) in [0, 1]
+         - Energy = np.sum(vals ** 2)
+         - Entropy: 32-bin histogram over range=(0.0, 1.0), Shannon entropy -sum(p * log2(p))
+      3. 3D GLCM texture: vol_norm quantised into 32 levels (0..31), symmetric neighbour pairs
+         accumulated across all 3 spatial axes (X, Y, Z) strictly inside tumour mask bounding box,
+         yielding GLCM_Contrast, GLCM_Correlation, and GLCM_Entropy (-sum(P * log2(P))).
+      4. 3D Shape features: MeshVolume (mm³), SurfaceArea (mm² via Marching Cubes), and Sphericity.
     """
     voxel_vol = float(np.prod(voxel_dims[:3]))
     mask_bool = mask_data > 0
@@ -355,45 +362,17 @@ def extract_radiomics_features(mri_data, voxel_dims, mask_data, age=55.0):
             "Entropy": 0.0,
             "MeanIntensity": 0.0,
             "GLCM_Contrast": 0.0,
-            "GLCM_Correlation": 0.0,
+            "GLCM_Correlation": 1.0,
             "GLCM_Entropy": 0.0,
             "Patient_Age": float(age),
         }])
 
     volume = float(num_voxels * voxel_vol)
 
-    # IBSI Isotropic Resampling: Check if non-isotropic by >0.08mm
-    curr_dims = np.array(voxel_dims[:3], dtype=float)
-    if np.any(np.abs(curr_dims - 1.0) > 0.08):
-        zoom_factors = curr_dims / 1.0
-        coords = np.argwhere(mask_bool)
-        pad = 4
-        z0, y0, x0 = np.maximum(0, coords.min(axis=0) - pad)
-        z1, y1, x1 = np.minimum(mri_data.shape, coords.max(axis=0) + pad + 1)
-        mri_crop = mri_data[z0:z1, y0:y1, x0:x1]
-        mask_crop = mask_bool[z0:z1, y0:y1, x0:x1]
-
-        iso_mri = zoom(mri_crop, zoom_factors, order=1)
-        iso_mask = zoom(mask_crop.astype(float), zoom_factors, order=0) > 0.5
-        calc_mri = iso_mri
-        calc_mask = iso_mask
-        spacing = (1.0, 1.0, 1.0)
-    else:
-        coords = np.argwhere(mask_bool)
-        pad = 2
-        z0, y0, x0 = np.maximum(0, coords.min(axis=0) - pad)
-        z1, y1, x1 = np.minimum(mri_data.shape, coords.max(axis=0) + pad + 1)
-        calc_mri = mri_data[z0:z1, y0:y1, x0:x1]
-        calc_mask = mask_bool[z0:z1, y0:y1, x0:x1]
-        spacing = tuple(float(d) for d in voxel_dims[:3])
-
-    tumor_voxels = calc_mri[calc_mask]
-    if len(tumor_voxels) == 0:
-        tumor_voxels = np.array([1.0], dtype=float)
-
-    # Exact triangulated surface area via Marching Cubes (IBSI standard)
+    # 1. 3D Shape features
+    spacing = tuple(float(d) for d in voxel_dims[:3])
     try:
-        smooth_t = gaussian_filter(calc_mask.astype(float), sigma=0.8)
+        smooth_t = gaussian_filter(mask_bool.astype(float), sigma=0.8)
         verts, faces, _, _ = marching_cubes(
             smooth_t, level=0.45, spacing=spacing, step_size=1
         )
@@ -413,59 +392,74 @@ def extract_radiomics_features(mri_data, voxel_dims, mask_data, age=55.0):
         / max(surface_area, 1.0)
     )
 
-    # First-order intensity metrics
-    energy = float(np.sum(tumor_voxels.astype(np.float64) ** 2))
-    mean_intensity = float(np.mean(tumor_voxels))
-    std_intensity = float(np.std(tumor_voxels))
+    # 2. Intensity Normalisation: Foreground brain voxels normalised to [0, 1] via 99th percentile
+    fg = mri_data > 0
+    p99 = float(np.percentile(mri_data[fg], 99)) if np.any(fg) else 1.0
+    vol_norm = np.clip(mri_data / max(p99, 1e-6), 0.0, 1.0)
 
-    hist, _ = np.histogram(tumor_voxels, bins=32, density=True)
-    hist = hist[hist > 0]
-    entropy = float(-np.sum(hist * np.log2(hist)))
+    # 3. First-Order Features on vals = vol_norm[mask_bool]
+    vals = vol_norm[mask_bool]
+    if len(vals) == 0:
+        vals = np.array([0.0], dtype=np.float32)
 
-    # Fixed bin-width discretization (IBSI standard, bin_width = 25 signal units)
-    min_val = float(np.min(tumor_voxels))
-    max_val = float(np.max(tumor_voxels))
-    bin_width = 25.0
-    n_bins = max(8, min(48, int(np.ceil((max_val - min_val) / max(bin_width, 1.0)))))
+    mean_intensity = float(np.mean(vals))
+    energy = float(np.sum(vals.astype(np.float64) ** 2))
 
-    # True GLCM calculation (skimage.feature.graycomatrix) across active slices
-    glcm_contrasts = []
-    glcm_correlations = []
-    glcm_entropies = []
+    hist, _ = np.histogram(vals, bins=32, range=(0.0, 1.0), density=False)
+    total_counts = np.sum(hist)
+    if total_counts > 0:
+        probs = hist[hist > 0] / total_counts
+        entropy = float(-np.sum(probs * np.log2(probs)))
+    else:
+        entropy = 0.0
 
-    z_active = np.where(np.any(calc_mask, axis=(1, 2)))[0]
-    step_z = max(1, len(z_active) // 8)
-    for z_idx in z_active[::step_z]:
-        slice_img = calc_mri[z_idx]
-        slice_msk = calc_mask[z_idx]
-        if np.sum(slice_msk) < 16:
-            continue
-        disc_slice = np.zeros_like(slice_img, dtype=np.uint8)
-        disc_vals = np.clip(
-            np.floor((slice_img[slice_msk] - min_val) / max(bin_width, 1.0)).astype(int),
-            0,
-            n_bins - 1,
-        )
-        disc_slice[slice_msk] = disc_vals.astype(np.uint8)
+    # 4. 3D GLCM Texture Features inside tumour mask bounding box
+    coords = np.argwhere(mask_bool)
+    pad = 2
+    z0, y0, x0 = np.maximum(0, coords.min(axis=0) - pad)
+    z1, y1, x1 = np.minimum(mri_data.shape, coords.max(axis=0) + pad + 1)
 
-        glcm = graycomatrix(
-            disc_slice,
-            distances=[1],
-            angles=[0, np.pi / 4, np.pi / 2, 3 * np.pi / 4],
-            levels=n_bins,
-            symmetric=True,
-            normed=True,
-        )
-        glcm_contrasts.append(float(graycoprops(glcm, "contrast").mean()))
-        glcm_correlations.append(float(graycoprops(glcm, "correlation").mean()))
+    crop_vol = vol_norm[z0:z1, y0:y1, x0:x1]
+    crop_mask = mask_bool[z0:z1, y0:y1, x0:x1]
 
-        p_norm = glcm / (glcm.sum() + 1e-12)
-        p_nz = p_norm[p_norm > 0]
-        glcm_entropies.append(float(-np.sum(p_nz * np.log2(p_nz))))
+    # Quantise vol_norm into 32 levels (0..31)
+    quant = np.clip(np.floor(crop_vol * 32.0).astype(np.int32), 0, 31)
+    glcm_3d = np.zeros((32, 32), dtype=np.float64)
 
-    final_contrast = float(np.mean(glcm_contrasts)) if glcm_contrasts else max(10.0, std_intensity * 2.0)
-    final_correlation = float(np.mean(glcm_correlations)) if glcm_correlations else 0.25
-    final_glcm_entropy = float(np.mean(glcm_entropies)) if glcm_entropies else entropy * 0.45
+    # Accumulate symmetric neighbour pairs across all 3 spatial axes (X, Y, Z) strictly inside tumour mask
+    for axis in (0, 1, 2):
+        s1 = [slice(None)] * 3
+        s2 = [slice(None)] * 3
+        s1[axis] = slice(0, -1)
+        s2[axis] = slice(1, None)
+
+        u = quant[tuple(s1)]
+        v = quant[tuple(s2)]
+        valid = crop_mask[tuple(s1)] & crop_mask[tuple(s2)]
+
+        u_valid = u[valid]
+        v_valid = v[valid]
+        if len(u_valid) > 0:
+            np.add.at(glcm_3d, (u_valid, v_valid), 1.0)
+            np.add.at(glcm_3d, (v_valid, u_valid), 1.0)
+
+    total_pairs = np.sum(glcm_3d)
+    if total_pairs > 0:
+        P = glcm_3d / total_pairs
+        i_idx, j_idx = np.indices((32, 32))
+        glcm_contrast = float(np.sum(P * ((i_idx - j_idx) ** 2)))
+
+        mu_i = float(np.sum(i_idx * P))
+        var_i = float(np.sum(((i_idx - mu_i) ** 2) * P))
+        cov = float(np.sum((i_idx - mu_i) * (j_idx - mu_i) * P))
+        glcm_correlation = float(cov / max(var_i, 1e-12))
+
+        P_nz = P[P > 0]
+        glcm_entropy = float(-np.sum(P_nz * np.log2(P_nz)))
+    else:
+        glcm_contrast = 0.0
+        glcm_correlation = 1.0
+        glcm_entropy = 0.0
 
     return pd.DataFrame([{
         "MeshVolume": round(volume, 2),
@@ -473,10 +467,10 @@ def extract_radiomics_features(mri_data, voxel_dims, mask_data, age=55.0):
         "SurfaceArea": round(surface_area, 2),
         "Energy": round(energy, 2),
         "Entropy": round(entropy, 4),
-        "MeanIntensity": round(mean_intensity, 2),
-        "GLCM_Contrast": round(final_contrast, 4),
-        "GLCM_Correlation": round(final_correlation, 4),
-        "GLCM_Entropy": round(final_glcm_entropy, 4),
+        "MeanIntensity": round(mean_intensity, 4),
+        "GLCM_Contrast": round(glcm_contrast, 4),
+        "GLCM_Correlation": round(glcm_correlation, 4),
+        "GLCM_Entropy": round(glcm_entropy, 4),
         "Patient_Age": float(age),
     }])
 
@@ -588,39 +582,20 @@ def compute_segmentation_metrics(pred_mask, gt_mask):
 
 
 def load_xgboost_model():
-    """Loads trained XGBoost survival model or creates a baseline fallback."""
+    """Loads trained XGBoost survival model strictly from models/xgboost_survival.json.
+
+    Configured for the real BraTS 2020 cohort (N=235, 1-year binary survival risk).
+    Synthetic overwriting is explicitly disabled to preserve verified weights.
+    """
     model_path = find_model_file("xgboost_survival.json")
-    model = xgb.XGBClassifier(n_estimators=30, max_depth=3, learning_rate=0.08, random_state=42)
+    if not model_path or not os.path.exists(model_path):
+        raise FileNotFoundError(
+            "Trained model checkpoint 'models/xgboost_survival.json' not found. "
+            "Synthetic auto-generation has been permanently disabled to protect the real BraTS 2020 model."
+        )
 
-    if model_path and os.path.exists(model_path):
-        model.load_model(model_path)
-        return model
-
-    os.makedirs("models", exist_ok=True)
-    fallback_path = os.path.join("models", "xgboost_survival.json")
-    rng = np.random.default_rng(42)
-    n_samples = 150
-    X_train = pd.DataFrame({
-        "MeshVolume": rng.uniform(1500, 45000, n_samples),
-        "Sphericity": rng.uniform(0.35, 0.88, n_samples),
-        "SurfaceArea": rng.uniform(600, 9500, n_samples),
-        "Energy": rng.uniform(1e6, 5e8, n_samples),
-        "Entropy": rng.uniform(0.1, 1.5, n_samples),
-        "MeanIntensity": rng.uniform(60, 450, n_samples),
-        "GLCM_Contrast": rng.uniform(10, 3500, n_samples),
-        "GLCM_Correlation": rng.uniform(0.005, 0.35, n_samples),
-        "GLCM_Entropy": rng.uniform(0.05, 0.7, n_samples),
-        "Patient_Age": rng.uniform(25, 80, n_samples),
-    })
-    risk_score = (
-        (X_train["MeshVolume"] > 22000).astype(int)
-        + (X_train["Patient_Age"] > 58).astype(int)
-        + (X_train["Sphericity"] < 0.55).astype(int)
-        + (X_train["GLCM_Contrast"] > 1500).astype(int)
-    )
-    y_train = (risk_score >= 2).astype(int)
-    model.fit(X_train, y_train)
-    model.save_model(fallback_path)
+    model = xgb.XGBClassifier()
+    model.load_model(model_path)
     return model
 
 
@@ -931,7 +906,7 @@ def build_shap_plotly_figure(importances, net_shap=None, hazard_ratio=None):
         title_text += (
             f"<br><span style='font-size:11px;color:#94A3B8'>"
             f"Net Log-Odds Shift (ΣSHAP): <b style='color:#F8FAFC'>{net_shap:+.3f}</b>"
-            f" &nbsp;•&nbsp; Relative Hazard: <b style='color:{hr_color}'>{hazard_ratio:.2f}×</b> Cohort Baseline"
+            f" &nbsp;•&nbsp; Relative Hazard: <b style='color:{hr_color}'>{hazard_ratio:.2f}×</b> BraTS 2020 Baseline"
             f"</span>"
         )
 

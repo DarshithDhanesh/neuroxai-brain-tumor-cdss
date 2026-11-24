@@ -933,6 +933,17 @@ elif "Clinical Report" in page:
         ref_df = build_biomarker_reference_table(pred["features"])
         st.dataframe(ref_df, use_container_width=True, hide_index=True, height=390)
 
+        if pred.get("days") is not None and "importances" in pred:
+            st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+            st.markdown("#### 🧬 Biomarker Attribution (Native C++ TreeSHAP)")
+            st.caption("Feature attribution relative to real BraTS 2020 survival cohort (N=235, 1-year mortality risk).")
+            fig_shap = build_shap_plotly_figure(
+                pred["importances"],
+                net_shap=pred.get("net_shap"),
+                hazard_ratio=pred.get("hazard_ratio"),
+            )
+            st.plotly_chart(fig_shap, use_container_width=True, config={"displayModeBar": False})
+
         if val_metrics:
             st.markdown("#### 🎯 Ground-Truth Benchmark Metrics")
             v1, v2, v3, v4 = st.columns(4)
@@ -987,11 +998,12 @@ elif "Clinical Report" in page:
             * **Active File:** `{active_scan_name}`
             * **Voxel Spacing:** `{zooms[0]:.2f} × {zooms[1]:.2f} × {zooms[2]:.2f} mm`
             * **Segmentation Engine:** {seg_source}
+            * **Prognostic Model:** BraTS 2020 Cohort (`N=235`, 1-Year Survival Risk)
             * **Predicted Grade:** {pred['tumor_class']}
             * **Location & Size:** {anatomy['hemisphere']} (`{anatomy['dims_mm'][0]} × {anatomy['dims_mm'][1]} × {anatomy['dims_mm'][2]} mm`)
             * **Tumour Burden:** `{anatomy['volume_cm3']} cm³` (`{anatomy['brain_occupancy_pct']}%` of brain)
             * **Prognosis Tier:** {pred['risk_category']} — {surv_line}
-            * **Relative Hazard:** `{pred.get('hazard_ratio', 1.0):.2f}×` cohort baseline (`ΣSHAP: {pred.get('net_shap', 0.0):+.3f}`)
+            * **Relative Hazard:** `{pred.get('hazard_ratio', 1.0):.2f}×` BraTS cohort baseline (`ΣSHAP: {pred.get('net_shap', 0.0):+.3f}`)
             """
         )
 
