@@ -1,0 +1,14 @@
+streamlit
+nibabel
+pydicom
+lifelines
+xgboost
+scikit-learn
+scikit-image
+matplotlib
+plotly
+numpy
+pandas
+scipy
+torch
+segmentation-models-pytorch

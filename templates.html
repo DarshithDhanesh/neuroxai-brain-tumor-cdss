@@ -1,0 +1,107 @@
+<!-- ═════════════════════════════════════════════════════════════════════════
+     NeuroXAI Clinical Decision Support System — All HTML UI Templates
+     Consolidated into a single unified HTML template registry.
+     ═════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Minimalist Sidebar Brand Card -->
+<template id="sidebar_brand">
+<div class="sidebar-brand-card">
+  <div class="sidebar-brand-header">
+    <div class="sidebar-brand-icon">🧠</div>
+    <div>
+      <div class="sidebar-brand-title">NeuroXAI</div>
+      <div class="sidebar-brand-sub">Clinical CDSS • v2.4</div>
+    </div>
+  </div>
+  <div class="sidebar-engine-tag">
+    <span class="status-pulse"></span>
+    <span>ResNet-34 3D U-Net • Calibrated CoxPH</span>
+  </div>
+</div>
+</template>
+
+
+<!-- Grand Showcase Hero Card (Displayed When No Scan is Loaded) -->
+<template id="hero_showcase">
+<div class="hero-showcase-container">
+  <div class="hero-badge-pill">⚡ Clinical Decision Support System • Neuro-Oncology v2.4</div>
+  <h1 class="hero-title">Automated 3D Volumetric Segmentation & Calibrated Survival Prognosis</h1>
+  <p class="hero-subtitle">
+    NeuroXAI delivers hospital-grade diagnostic intelligence directly on-device: 
+    deep 3D multi-compartment ResNet-34 U-Net segmentation, IBSI-standard quantitative radiomics, 
+    calibrated Cox Proportional Hazards multi-horizon survival probability curves, and native TreeSHAP explainability.
+  </p>
+  <div class="hero-spec-strip">
+    <span class="hero-spec-pill">🧠 ResNet-34 3D U-Net (BraTS)</span>
+    <span class="hero-spec-pill">📈 Calibrated CoxPH S(t) Horizons</span>
+    <span class="hero-spec-pill">📐 IBSI 1.0mm³ Isotropic Radiomics</span>
+    <span class="hero-spec-pill">⚡ Native C++ TreeSHAP (XAI)</span>
+    <span class="hero-spec-pill">🏥 Hospital DICOM & NIfTI Native</span>
+    <span class="hero-spec-pill">🔒 100% Offline Local Processing</span>
+  </div>
+</div>
+</template>
+
+
+<!-- Onboarding Feature Card Template -->
+<template id="feature_card">
+<div class="onboarding-feature-card">
+  <div class="feature-card-icon" style="background: {icon_bg}; color: {icon_color};">{icon}</div>
+  <h4 class="feature-card-title">{title}</h4>
+  <p class="feature-card-desc">
+    {description}
+  </p>
+</div>
+</template>
+
+
+<!-- Floating Glass KPI Metric Card Template -->
+<template id="kpi_card">
+<div class="glass-kpi-card {accent_class}">
+  <div>
+    <div class="glass-kpi-label">{label}</div>
+    <div class="glass-kpi-value">{value}</div>
+  </div>
+  <div class="glass-kpi-sub">{sub}</div>
+</div>
+</template>
+
+
+<!-- Prognosis Stratification Badge Card Template -->
+<template id="prognosis_card">
+<div class="glass-kpi-card kpi-accent-purple">
+  <div>
+    <div class="glass-kpi-label">Prognosis Stratification</div>
+    <div style="margin-top:6px"><span class="{badge_class}">{risk_category}</span></div>
+  </div>
+  <div class="glass-kpi-sub">Risk Score: {risk_score}%</div>
+</div>
+</template>
+
+
+<!-- BraTS Multi-Compartment Volumetric Proportional Banner -->
+<template id="compartments_banner">
+<div class="subcomp-glass-banner">
+  <span style="color:#94A3B8;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">BraTS Compartments:</span>
+  <div class="subcomp-pill"><span class="dot-et"></span><span style="color:#EF4444">Enhancing (ET): {et_vol} cm³ ({et_pct}%)</span></div>
+  <div class="subcomp-pill"><span class="dot-tc"></span><span style="color:#06B6D4">Core (TC): {tc_vol} cm³ ({tc_pct}%)</span></div>
+  <div class="subcomp-pill"><span class="dot-ed"></span><span style="color:#FACC15">Edema (ED): {ed_vol} cm³ ({ed_pct}%)</span></div>
+</div>
+</template>
+
+
+<!-- Structured Clinical Radiological Impression Glass Container -->
+<template id="impression_box">
+<div class="impression-glass-box">
+  {content}
+</div>
+</template>
+
+
+<!-- Academic & Clinical Decision-Support Notice Banner -->
+<template id="clinical_notice">
+<div class="clinical-notice-box">
+  <span>⚠️</span>
+  <div><b>Academic & Decision-Support Notice:</b> Intended for radiological review and neuro-oncology research. Final diagnosis and surgical management require clinical validation by a board-certified physician.</div>
+</div>
+</template>

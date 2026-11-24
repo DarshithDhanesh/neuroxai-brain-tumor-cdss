@@ -1,0 +1,22 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Environment & system files
+.env
+.DS_Store
+Thumbs.db
+
+# Bulky MRI datasets & archives
+*.nii
+*.nii.gz
+*.dcm
+*.zip
+
+# Remove the '#' below ONLY if best_unet_brats.pth is over 100 MB
+# *.pth

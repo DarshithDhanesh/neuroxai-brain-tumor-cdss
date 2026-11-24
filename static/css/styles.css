@@ -1,0 +1,899 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+code, kbd, samp, pre {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Global App Background: Sleek Deep Radial Obsidian with Subtle Surgical Teal Tint */
+.stApp {
+  background-color: #050811;
+  background-image: 
+    radial-gradient(circle at 50% -10%, rgba(20, 184, 166, 0.12) 0%, transparent 60%),
+    radial-gradient(circle at 90% 15%, rgba(13, 148, 136, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 10% 85%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, #070B14 0%, #030509 100%);
+  color: #E2E8F0;
+}
+
+/* Hide Deploy button and right-side toolbar across all Streamlit versions */
+[data-testid="stDeployButton"],
+[data-testid="stAppDeployButton"],
+.stAppDeployButton,
+[data-testid="stToolbarActions"],
+#MainMenu {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Keep top header transparent and non-blocking, but keep sidebar toggle clickable */
+header[data-testid="stHeader"] {
+  background: transparent !important;
+  pointer-events: none !important;
+}
+header[data-testid="stHeader"] button,
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebarCollapsedControl"] {
+  pointer-events: auto !important;
+}
+
+/* Give main content enough top breathing room so nothing sits in the header zone */
+.block-container {
+  padding-top: 1.8rem !important;
+  padding-bottom: 3.0rem !important;
+  max-width: 1460px !important;
+}
+
+/* Custom Modern Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #030509;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #14B8A6;
+}
+
+/* ── Sidebar Surface & Typography ────────────────────────────────────────── */
+section[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #0F172A 0%, #0B1120 100%) !important;
+  border-right: 1px solid rgba(20, 184, 166, 0.16) !important;
+}
+section[data-testid="stSidebar"] .block-container {
+  padding-top: 1.5rem !important;
+  padding-left: 1.1rem !important;
+  padding-right: 1.1rem !important;
+}
+section[data-testid="stSidebar"] hr {
+  border-color: rgba(148, 163, 184, 0.14) !important;
+  margin: 0.9rem 0 !important;
+}
+section[data-testid="stSidebar"] label p {
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: #CBD5E1 !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Minimalist Sidebar Brand Card */
+.sidebar-brand-card {
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-brand-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #14B8A6, #2DD4BF);
+  opacity: 0.85;
+}
+.sidebar-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-brand-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  border-radius: 10px;
+}
+.sidebar-brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #F8FAFC;
+  line-height: 1.1;
+}
+.sidebar-brand-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94A3B8;
+  letter-spacing: 0.04em;
+  margin-top: 3px;
+}
+.sidebar-engine-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.68rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #2DD4BF;
+  letter-spacing: 0.02em;
+}
+.status-pulse {
+  width: 8px;
+  height: 8px;
+  background-color: #10B981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #10B981;
+  animation: pulse-glow 2s infinite;
+  display: inline-block;
+}
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOP NAVIGATION — Sticky Controls (Zero Dark Box, Zero Clipping)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Sticky container: 100% transparent, zero dark box, zero shadow clip */
+div[data-testid="stElementContainer"]:has(.st-key-top_nav_container) {
+  position: sticky !important;
+  top: 0px !important;
+  z-index: 9999 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  contain: none !important;
+  padding: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
+}
+
+/* Ensure inner wrappers don't add redundant margins or padding */
+div.st-key-top_nav_container,
+div[data-testid="element-container"]:has(.st-key-top_nav_container),
+div[data-testid="stLayoutWrapper"]:has(.st-key-top_nav_container),
+div[data-testid="stVerticalBlock"]:has(> div > div > .st-key-nav_btn_dash) {
+  position: static !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  contain: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Force all inner layout wrappers around the navbar to be transparent & visible */
+div.st-key-top_nav_container div[data-testid="stHorizontalBlock"],
+div.st-key-top_nav_container div[data-testid="stColumn"],
+div.st-key-top_nav_container div[data-testid="stVerticalBlock"],
+div.st-key-top_nav_container div[data-testid="stElementContainer"],
+div.st-key-top_nav_container div[data-testid="stButton"],
+div.st-key-top_nav_container [data-testid="stLayoutWrapper"] {
+  background: transparent !important;
+  overflow: visible !important;
+  contain: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Horizontal gap and vertical centering between columns */
+div.st-key-top_nav_container div[data-testid="stHorizontalBlock"] {
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+/* Universal Geometry & Alignment for All 4 Nav Buttons (Active & Inactive) */
+div.st-key-top_nav_container button,
+div.st-key-nav_btn_dash button,
+div.st-key-nav_btn_lab button,
+div.st-key-nav_btn_rep button,
+div.st-key-nav_btn_long button,
+div.st-key-top_nav_container [data-testid="stBaseButton-primary"],
+div.st-key-top_nav_container [data-testid="stBaseButton-secondary"],
+div.st-key-top_nav_container [data-testid="baseButton-primary"],
+div.st-key-top_nav_container [data-testid="baseButton-secondary"] {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  box-sizing: border-box !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 0.90rem !important;
+  letter-spacing: 0.01em !important;
+  transform: none !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Inactive Nav Buttons (Resting State) */
+div.st-key-top_nav_container button[kind="secondary"],
+div.st-key-top_nav_container [data-testid="stBaseButton-secondary"],
+div.st-key-top_nav_container [data-testid="baseButton-secondary"],
+div.st-key-nav_btn_dash button:not([kind="primary"]),
+div.st-key-nav_btn_lab button:not([kind="primary"]),
+div.st-key-nav_btn_rep button:not([kind="primary"]),
+div.st-key-nav_btn_long button:not([kind="primary"]) {
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: #94A3B8 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  transform: none !important;
+  font-weight: 600 !important;
+}
+
+/* Inactive Nav Buttons (Hover State) */
+div.st-key-top_nav_container button[kind="secondary"]:hover,
+div.st-key-top_nav_container [data-testid="stBaseButton-secondary"]:hover,
+div.st-key-top_nav_container [data-testid="baseButton-secondary"]:hover,
+div.st-key-nav_btn_dash button:not([kind="primary"]):hover,
+div.st-key-nav_btn_lab button:not([kind="primary"]):hover,
+div.st-key-nav_btn_rep button:not([kind="primary"]):hover,
+div.st-key-nav_btn_long button:not([kind="primary"]):hover {
+  background: rgba(20, 30, 52, 0.90) !important;
+  border-color: rgba(20, 184, 166, 0.40) !important;
+  color: #F8FAFC !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 10px rgba(20, 184, 166, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Active Nav Button: Sleek Dark Ghost with Glowing Surgical Teal Border */
+div.st-key-top_nav_container button[kind="primary"],
+div.st-key-top_nav_container [data-testid="stBaseButton-primary"],
+div.st-key-top_nav_container [data-testid="baseButton-primary"],
+div.st-key-nav_btn_dash button[kind="primary"],
+div.st-key-nav_btn_lab button[kind="primary"],
+div.st-key-nav_btn_rep button[kind="primary"],
+div.st-key-nav_btn_long button[kind="primary"] {
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 2px solid #14B8A6 !important;
+  color: #2DD4BF !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 16px rgba(20, 184, 166, 0.35), inset 0 0 10px rgba(20, 184, 166, 0.12) !important;
+  transform: none !important;
+}
+
+/* Active Nav Button (Hover State) */
+div.st-key-top_nav_container button[kind="primary"]:hover,
+div.st-key-top_nav_container [data-testid="stBaseButton-primary"]:hover,
+div.st-key-top_nav_container [data-testid="baseButton-primary"]:hover,
+div.st-key-nav_btn_dash button[kind="primary"]:hover,
+div.st-key-nav_btn_lab button[kind="primary"]:hover,
+div.st-key-nav_btn_rep button[kind="primary"]:hover,
+div.st-key-nav_btn_long button[kind="primary"]:hover {
+  background: rgba(20, 32, 54, 0.95) !important;
+  border-color: #2DD4BF !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 22px rgba(45, 212, 191, 0.50), inset 0 0 14px rgba(45, 212, 191, 0.20) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Universal Typography inside Top Nav Buttons: Single Line, Centered */
+div.st-key-top_nav_container button p,
+div.st-key-top_nav_container button div,
+div.st-key-nav_btn_dash button p,
+div.st-key-nav_btn_lab button p,
+div.st-key-nav_btn_rep button p,
+div.st-key-nav_btn_long button p {
+  font-size: 0.90rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+div.st-key-top_nav_container button[kind="primary"] p,
+div.st-key-top_nav_container button[kind="primary"] div,
+div.st-key-nav_btn_dash button[kind="primary"] p,
+div.st-key-nav_btn_lab button[kind="primary"] p,
+div.st-key-nav_btn_rep button[kind="primary"] p,
+div.st-key-nav_btn_long button[kind="primary"] p {
+  color: #2DD4BF !important;
+}
+
+/* Floating Glass KPI Metric Cards */
+.glass-kpi-card {
+  background: rgba(15, 23, 42, 0.74);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 14px !important;
+  height: 118px !important;
+  min-height: 118px !important;
+  max-height: 118px !important;
+  box-sizing: border-box !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.24s ease, box-shadow 0.24s ease;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.glass-kpi-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(20, 184, 166, 0.4);
+  box-shadow: 0 14px 35px -6px rgba(0, 0, 0, 0.6), 0 0 20px rgba(20, 184, 166, 0.15);
+}
+.glass-kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #14B8A6, #2DD4BF);
+  opacity: 0.85;
+}
+.kpi-accent-emerald::before { background: linear-gradient(90deg, #10B981, #34D399) !important; }
+.kpi-accent-amber::before { background: linear-gradient(90deg, #F59E0B, #FBBF24) !important; }
+.kpi-accent-rose::before { background: linear-gradient(90deg, #F43F5E, #FB7185) !important; }
+.kpi-accent-purple::before { background: linear-gradient(90deg, #14B8A6, #2DD4BF) !important; }
+
+.glass-kpi-label {
+  font-size: 0.70rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.glass-kpi-value {
+  font-size: 1.30rem;
+  font-weight: 800;
+  color: #F8FAFC;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.glass-kpi-sub {
+  font-size: 0.74rem;
+  color: #64748B;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Clinical PACS Viewport Container */
+.pacs-viewport-wrapper {
+  background: #020617;
+  border: 1px solid rgba(20, 184, 166, 0.28);
+  border-radius: 16px;
+  padding: 12px;
+  position: relative;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.75), 0 0 25px rgba(20, 184, 166, 0.08);
+}
+.pacs-hud-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 10px 10px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: #2DD4BF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
+/* Sub-Compartment Volumetric Proportional Bar */
+.subcomp-glass-banner {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.82rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.subcomp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.dot-et { width: 9px; height: 9px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 10px #EF4444; }
+.dot-tc { width: 9px; height: 9px; background: #06B6D4; border-radius: 50%; box-shadow: 0 0 10px #06B6D4; }
+.dot-ed { width: 9px; height: 9px; background: #FACC15; border-radius: 50%; box-shadow: 0 0 10px #FACC15; }
+.dot-wt { width: 9px; height: 9px; background: #14B8A6; border-radius: 50%; box-shadow: 0 0 10px #14B8A6; }
+
+/* Structured Clinical Impression Glass Box */
+.impression-glass-box {
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(20, 184, 166, 0.32);
+  border-left: 4px solid #14B8A6;
+  border-radius: 14px;
+  padding: 20px 24px;
+  line-height: 1.7;
+  color: #E2E8F0;
+  font-size: 0.92rem;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+}
+
+/* Risk Status Badges */
+.badge-high { background: rgba(244,63,94,0.20); color: #FB7185; border: 1px solid rgba(244,63,94,0.50); padding: 4px 14px; border-radius: 100px; font-size: 0.80rem; font-weight: 700; letter-spacing: 0.03em; }
+.badge-moderate { background: rgba(245,158,11,0.20); color: #FBBF24; border: 1px solid rgba(245,158,11,0.50); padding: 4px 14px; border-radius: 100px; font-size: 0.80rem; font-weight: 700; letter-spacing: 0.03em; }
+.badge-low { background: rgba(16,185,129,0.20); color: #34D399; border: 1px solid rgba(16,185,129,0.50); padding: 4px 14px; border-radius: 100px; font-size: 0.80rem; font-weight: 700; letter-spacing: 0.03em; }
+.badge-healthy { background: rgba(20,184,166,0.20); color: #2DD4BF; border: 1px solid rgba(20,184,166,0.50); padding: 4px 14px; border-radius: 100px; font-size: 0.80rem; font-weight: 700; letter-spacing: 0.03em; }
+
+/* Grand Showcase Hero Card */
+.hero-showcase-container {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+  padding: 36px 40px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.hero-showcase-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #14B8A6, #2DD4BF);
+  opacity: 0.85;
+}
+.hero-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(20, 184, 166, 0.12);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+  color: #2DD4BF;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero-title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #F8FAFC;
+  margin: 0 0 12px 0;
+}
+.hero-subtitle {
+  font-size: 1.02rem;
+  color: #94A3B8;
+  line-height: 1.65;
+  max-width: 880px;
+  margin: 0 0 24px 0;
+}
+.hero-spec-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.hero-spec-pill {
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  color: #CBD5E1;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Onboarding Feature Cards (Strict Equal Height & Balanced Alignment) */
+div[data-testid="stHorizontalBlock"]:has(.onboarding-feature-card) {
+  align-items: stretch !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.onboarding-feature-card) > div[data-testid="stColumn"] {
+  display: flex !important;
+  flex-direction: column !important;
+}
+div[data-testid="stHorizontalBlock"]:has(.onboarding-feature-card) div[data-testid="stElementContainer"],
+div[data-testid="stHorizontalBlock"]:has(.onboarding-feature-card) div[data-testid="stMarkdown"],
+div[data-testid="stHorizontalBlock"]:has(.onboarding-feature-card) div.stMarkdown {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.onboarding-feature-card {
+  background: rgba(15, 23, 42, 0.70);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  height: 250px !important;
+  min-height: 250px !important;
+  max-height: 250px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+.onboarding-feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #14B8A6, #2DD4BF);
+  opacity: 0.85;
+}
+.onboarding-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(20, 184, 166, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(20, 184, 166, 0.12);
+}
+.feature-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.feature-card-title {
+  color: #F8FAFC;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.feature-card-desc {
+  color: #94A3B8;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
+}
+
+/* Primary Button: Outline Ghost Style (Matching User Selection) */
+div[data-testid="stButton"] > button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.90rem !important;
+  letter-spacing: 0.01em !important;
+  transition: all 0.22s ease !important;
+}
+div[data-testid="stButton"] > button[kind="primary"] {
+  background: rgba(15, 23, 42, 0.88) !important;
+  color: #2DD4BF !important;
+  border: 2px solid #14B8A6 !important;
+  box-shadow: 0 0 16px rgba(20, 184, 166, 0.32), inset 0 0 8px rgba(20, 184, 166, 0.10) !important;
+}
+div[data-testid="stButton"] > button[kind="primary"]:hover {
+  background: rgba(20, 184, 166, 0.15) !important;
+  border-color: #2DD4BF !important;
+  color: #FFFFFF !important;
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(45, 212, 191, 0.50), inset 0 0 12px rgba(45, 212, 191, 0.20) !important;
+}
+div[data-testid="stButton"] > button[kind="secondary"] {
+  background: rgba(15, 23, 42, 0.75) !important;
+  color: #CBD5E1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+div[data-testid="stButton"] > button[kind="secondary"]:hover {
+  border-color: rgba(20, 184, 166, 0.5) !important;
+  color: #FFFFFF !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+}
+
+/* ── Text Inputs & Selectboxes (Matching Teal Focus Ring) ────────────────── */
+section[data-testid="stSidebar"] [data-baseweb="input"],
+section[data-testid="stSidebar"] [data-baseweb="select"] > div {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border: 1px solid #1E293B !important;
+  border-radius: 10px !important;
+  color: #F8FAFC !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+section[data-testid="stSidebar"] [data-baseweb="input"]:focus-within,
+section[data-testid="stSidebar"] [data-baseweb="select"] > div:focus-within {
+  border-color: #14B8A6 !important;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.22) !important;
+}
+
+/* ── Sliders & Checkboxes (Replace Default Red with Surgical Teal) ────────── */
+input[type="checkbox"] {
+  accent-color: #14B8A6 !important;
+}
+[data-testid="stCheckbox"] label span[role="checkbox"] {
+  border-color: #14B8A6 !important;
+}
+[data-testid="stCheckbox"] label span[role="checkbox"][aria-checked="true"] {
+  background-color: #14B8A6 !important;
+  border-color: #14B8A6 !important;
+}
+[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
+  background-color: #14B8A6 !important;
+  border: 2px solid #CCFBF1 !important;
+  box-shadow: 0 0 10px rgba(20, 184, 166, 0.55) !important;
+}
+[data-testid="stSlider"] [data-testid="stSliderThumbValue"] {
+  color: #5EEAD4 !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+}
+/* Tick bar container (min & max labels) - strictly transparent */
+[data-testid="stSlider"] [data-testid="stSliderTickBar"],
+[data-testid="stSlider"] [data-baseweb="slider"] [data-testid="stSliderTickBar"],
+[data-testid="stSlider"] [data-testid="stSliderTickBarMin"],
+[data-testid="stSlider"] [data-testid="stSliderTickBarMax"],
+[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+/* Tick bar text labels (e.g. 0 and 154) */
+[data-testid="stSlider"] [data-testid="stSliderTickBar"] > div,
+[data-testid="stSlider"] [data-testid="stSliderTickBar"] span,
+[data-testid="stSlider"] [data-testid="stSliderTickBarMin"],
+[data-testid="stSlider"] [data-testid="stSliderTickBarMax"],
+[data-testid="stSlider"] div[data-baseweb="slider"] > div:last-child > div {
+  color: #64748B !important;
+  font-size: 0.76rem !important;
+  font-weight: 500 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+/* Prevent any container from turning into a solid teal rectangle on hover/focus */
+[data-testid="stSlider"]:hover [data-testid="stSliderTickBar"],
+[data-testid="stSlider"]:focus-within [data-testid="stSliderTickBar"],
+[data-testid="stSlider"] div[data-baseweb="slider"]:hover [data-testid="stSliderTickBar"] {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* ── Popover Clinical Dark Theme Styling ──────────────────────────────────── */
+div[data-testid="stPopover"] > button {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(20, 184, 166, 0.35) !important;
+  color: #2DD4BF !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.86rem !important;
+  transition: all 0.2s ease !important;
+  height: 38px !important;
+}
+div[data-testid="stPopover"] > button:hover {
+  background: rgba(20, 184, 166, 0.15) !important;
+  border-color: #2DD4BF !important;
+  box-shadow: 0 0 14px rgba(20, 184, 166, 0.25) !important;
+  color: #FFFFFF !important;
+}
+div[data-testid="stPopoverBody"] {
+  background-color: #0F172A !important;
+  border: 1px solid rgba(20, 184, 166, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85) !important;
+  padding: 1rem !important;
+}
+
+/* ── File Uploader Dropzone (Dashed Teal Border + Hover Glow) ────────────── */
+[data-testid="stFileUploaderDropzone"] {
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1.5px dashed rgba(20, 184, 166, 0.35) !important;
+  border-radius: 12px !important;
+  padding: 14px 12px !important;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+[data-testid="stFileUploaderDropzone"]:hover {
+  border-color: #14B8A6 !important;
+  background: rgba(30, 41, 59, 0.82) !important;
+  box-shadow: 0 0 18px rgba(20, 184, 166, 0.14) !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] span {
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  color: #E2E8F0 !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] small {
+  font-size: 0.72rem !important;
+  color: #64748B !important;
+}
+
+/* ── Full-Width Styled "Browse files" Button ─────────────────────────────── */
+[data-testid="stFileUploaderDropzone"] button {
+  width: 100% !important;
+  margin-top: 8px !important;
+  background: rgba(20, 184, 166, 0.12) !important;
+  color: #2DD4BF !important;
+  border: 1px solid rgba(20, 184, 166, 0.42) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 0.84rem !important;
+  transition: all 0.2s ease !important;
+}
+[data-testid="stFileUploaderDropzone"] button:hover {
+  background: rgba(20, 184, 166, 0.24) !important;
+  color: #FFFFFF !important;
+  border-color: #14B8A6 !important;
+}
+
+/* ── Uploaded File Row Styled as Emerald "Scan Loaded" Card ──────────────── */
+[data-testid="stFileUploaderFile"] {
+  background: rgba(16, 185, 129, 0.09) !important;
+  border: 1px solid rgba(16, 185, 129, 0.32) !important;
+  border-left: 3px solid #10B981 !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  margin-top: 8px !important;
+}
+[data-testid="stFileUploaderFileName"] {
+  color: #ECFDF5 !important;
+  font-size: 0.83rem !important;
+  font-weight: 600 !important;
+}
+[data-testid="stFileUploaderFile"] small {
+  color: #6EE7B7 !important;
+  font-size: 0.72rem !important;
+}
+
+/* ── Sidebar Expanders (Clean Clinical Accordions) ───────────────────────── */
+section[data-testid="stSidebar"] [data-testid="stExpander"] {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid #1E293B !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+  color: #CBD5E1 !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+}
+section[data-testid="stSidebar"] [data-testid="stExpander"]:hover {
+  border-color: rgba(20, 184, 166, 0.38) !important;
+}
+
+/* ── Keep Top Segmented Control / Pill Nav Strictly on One Horizontal Row ── */
+[data-testid="stSegmentedControl"] > div,
+div[role="radiogroup"][aria-orientation="horizontal"] {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+[data-testid="stSegmentedControl"] button {
+  flex: 1 1 0% !important;
+  white-space: nowrap !important;
+  border-radius: 10px !important;
+  padding: 0.58rem 0.9rem !important;
+  font-weight: 600 !important;
+}
+
+.clinical-notice-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: 0.82rem;
+  color: #FDE68A;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  line-height: 1.5;
+}
+
+/* ── Plotly Modebar & Fullscreen Button Styling ──────────────────────────── */
+.js-plotly-plot .plotly .modebar-container {
+  top: 4px !important;
+  right: 32px !important;
+  z-index: 100 !important;
+}
+
+.js-plotly-plot .plotly .modebar {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(20, 184, 166, 0.25) !important;
+  border-radius: 6px !important;
+  padding: 2px 4px !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn path {
+  fill: #94A3B8 !important;
+}
+
+.js-plotly-plot .plotly .modebar-btn:hover path,
+.js-plotly-plot .plotly .modebar-btn.active path {
+  fill: #00F0FF !important;
+}
+
+/* Streamlit's "View fullscreen" button placement next to modebar */
+[data-testid="stPlotlyChart"] [data-testid="StyledFullScreenButton"] {
+  top: 4px !important;
+  right: 4px !important;
+  color: #94A3B8 !important;
+  z-index: 101 !important;
+}
+
+[data-testid="stPlotlyChart"] [data-testid="StyledFullScreenButton"]:hover {
+  color: #00F0FF !important;
+}
+
+/* Hide floating Plotly modebar & Streamlit chart hover toolbar */
+[data-testid="stPlotlyChart"] .modebar-container,
+[data-testid="stPlotlyChart"] .modebar,
+[data-testid="stElementToolbar"] {
+  display: none !important;
+  visibility: hidden !important;
+}
